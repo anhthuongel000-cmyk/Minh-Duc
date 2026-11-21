@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#080d19">
+<title>KEY BYPASS V2</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;padding:18px;
+ background:#080d19;color:#fff;
+ font-family:-apple-system,BlinkMacSystemFont,Arial,sans-serif;
+ min-height:100vh;
+}
+.container{max-width:550px;margin:25px auto}
+.header{text-align:center;margin-bottom:28px}
+.header h1{font-size:30px;color:#62a5ff;margin:0}
+.header p{color:#8294b2;font-size:13px}
+.panel{
+ background:#121c30;border:1px solid #273957;
+ padding:20px;border-radius:17px;margin-bottom:17px;
+}
+h3{font-size:15px;margin:0 0 15px}
+.input{
+ display:block;width:100%;height:55px;
+ padding:0 14px;border-radius:10px;
+ background:#080f20;border:1px solid #344665;
+ color:white;font-size:16px;outline:none;
+ -webkit-appearance:none;
+}
+.input:focus{border-color:#5c9fff}
+button{
+ border:0;border-radius:10px;
+ padding:14px;font-size:14px;font-weight:700;
+ cursor:pointer;touch-action:manipulation;
+ -webkit-tap-highlight-color:transparent;
+}
+button:active{opacity:.7}
+.primary{
+ width:100%;background:#347ff5;color:white;
+ margin-top:12px;
+}
+.secondary{background:#263b5c;color:#fff}
+.row{display:flex;gap:9px;margin-top:10px}
+.row button{flex:1}
+.status{
+ display:none;margin-top:15px;padding:14px;
+ border-radius:10px;background:#091426;
+ border:1px solid #2c4265;
+ font-size:13px;line-height:1.6;
+ overflow-wrap:anywhere;
+}
+.green{color:#7bffb0}
+.blue{color:#70adff}
+.key{
+ margin-top:12px;padding:12px;
+ border-radius:9px;background:#07101d;
+ color:#7bffb0;overflow-wrap:anywhere;
+}
+.small{font-size:12px;color:#8395b1;line-height:1.6}
+.history-item{
+ padding:12px;background:#091426;
+ border-radius:9px;margin-top:9px;
+ font-size:12px;overflow-wrap:anywhere;
+}
+.history-item button{margin-top:8px}
+.footer{text-align:center;color:#71829e;font-size:11px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="container">
+
+ <div class="header">
+  <h1>⚡ KEY BYPASS</h1>
+  <p>MULTI LINK SYSTEM • VERSION 2.0</p>
+ </div>
+
+ <div class="panel">
+  <h3>🔗 NHẬP LINK CẦN LẤY KEY</h3>
+
+  <input
+   class="input"
+   id="url"
+   type="url"
+   placeholder="Dán link vào đây..."
+   autocomplete="off"
+   autocapitalize="off"
+   spellcheck="false"
+   enterkeyhint="go"
+  >
+
+  <div class="row">
+   <button class="secondary" onclick="pasteLink()">📋 DÁN LINK</button>
+   <button class="secondary" onclick="clearLink()">✖ XÓA</button>
+  </div>
+
+  <button class="primary" onclick="analyze()">🔍 PHÂN TÍCH LINK</button>
+
+  <div class="status" id="status"></div>
+ </div>
+
+ <div class="panel">
+  <h3>🔑 TÌM KEY TRONG NỘI DUNG</h3>
+  <textarea
+   id="content"
+   class="input"
+   style="height:110px;padding:13px;resize:vertical"
+   placeholder="Dán nội dung chứa KEY vào đây..."
+   autocapitalize="off"
+   spellcheck="false"
+  ></textarea>
+
+  <button class="primary" onclick="findKey()">TÌM KEY</button>
+  <div class="status" id="keyStatus"></div>
+ </div>
+
+ <div class="panel">
+  <h3>📜 LỊCH SỬ LINK</h3>
+  <div id="history" class="small">Chưa có lịch sử.</div>
+  <button class="secondary" style="margin-top:12px"
+   onclick="clearHistory()">XÓA LỊCH SỬ</button>
+ </div>
+
+ <div class="footer">
+  KEY BYPASS V2.0 • MOBILE OPTIMIZED
+ </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+
+const providers=[
+ ["Linkvertise",["linkvertise.com","linkvertise.download"]],
+ ["Work.ink",["work.ink","workink.net"]],
+ ["LootLabs",["loot-link.com","lootlabs.gg"]],
+ ["Rekonise",["rekonise.com"]]
+];
+
+function getPlatform(url){
+ const host=new URL(url).hostname.toLowerCase();
+ for(const [name,domains] of providers){
+  if(domains.some(d=>host===d||host.endsWith("."+d))){
+   return name;
+  }
+ }
+ return "Website khác";
+}
+
+// DÁN LINK - dùng clipboard khi trình duyệt cho phép
+async function pasteLink(){
+ const input=$("url");
+ input.focus();
+
+ try{
+  if(!navigator.clipboard||!navigator.clipboard.readText){
+   throw new Error("Không hỗ trợ clipboard");
+  }
+  const text=await navigator.clipboard.readText();
+  if(!text.trim())throw new Error("Clipboard trống");
+  input.value=text.trim();
+  input.dispatchEvent(new Event("input",{bubbles:true}));
+  showStatus("Đã dán link thành công!","green");
+ }catch(e){
+  showStatus(
+   "Trình duyệt chưa cho phép truy cập clipboard. Hãy nhấn giữ vào ô nhập link và chọn Dán (Paste).",
+   "blue"
+  );
+ }
+}
+
+function clearLink(){
+ $("url").value="";
+ $("status").style.display="none";
+ $("url").focus();
+}
+
+function showStatus(message,color){
+ const box=$("status");
+ box.style.display="block";
+ box.className="status "+color;
+ box.textContent=message;
+}
+
+function validLink(value){
+ try{
+  const u=new URL(value);
+  return u.protocol==="https:"||u.protocol==="http:";
+ }catch(e){return false}
+}
+
+function analyze(){
+ const value=$("url").value.trim();
+
+ if(!value){
+  showStatus("❌ Bạn chưa nhập link! Hãy dán link trước.","blue");
+  $("url").focus();
+  return;
+ }
+
+ if(!validLink(value)){
+  showStatus("❌ Link không hợp lệ. Hãy nhập đường dẫn bắt đầu bằng https:// hoặc http://","blue");
+  return;
+ }
+
+ const platform=getPlatform(value);
+
+ showStatus(
+  "✓ PHÂN TÍCH THÀNH CÔNG\n"+
+  "Nền tảng: "+platform+"\n"+
+  "Đường dẫn: "+value+"\n\n"+
+  "Link đã được nhận diện. Công cụ chưa thực hiện bypass hoặc xác nhận lấy được KEY. Bạn có thể mở trang để tiếp tục quy trình được phép.",
+  "green"
+ );
+
+ saveHistory(value,platform);
+}
+
+function openLink(){
+ const value=$("url").value.trim();
+ if(validLink(value)){
+  window.open(value,"_blank","noopener,noreferrer");
+ }
+}
+
+function findKey(){
+ const text=$("content").value;
+ const box=$("keyStatus");
+ box.style.display="block";
+ box.innerHTML="";
+
+ if(!text.trim()){
+  box.textContent="Vui lòng dán nội dung cần tìm KEY.";
+  return;
+ }
+
+ const regex=/\b[A-Z0-9_-]{12,40}\b/gi;
+ const matches=[...new Set(text.match(regex)||[])];
+
+ if(!matches.length){
+  box.textContent="Không tìm thấy chuỗi có dạng KEY.";
+  return;
+ }
+
+ const title=document.createElement("div");
+ title.textContent="Tìm thấy "+matches.length+" chuỗi:";
+ box.appendChild(title);
+
+ matches.slice(0,20).forEach(key=>{
+  const div=document.createElement("div");
+  div.className="key";
+  const value=document.createElement("span");
+  value.textContent=key;
+  const btn=document.createElement("button");
+  btn.className="secondary";
+  btn.style.marginLeft="8px";
+  btn.textContent="COPY";
+  btn.onclick=()=>copyText(key);
+  div.append(value,btn);
+  box.appendChild(div);
+ });
+}
+
+async function copyText(text){
+ try{
+  await navigator.clipboard.writeText(text);
+  alert("Đã sao chép!");
+ }catch(e){
+  alert("Không thể tự sao chép. Hãy chọn nội dung và sao chép thủ công.");
+ }
+}
+
+function saveHistory(url,platform){
+ let data=JSON.parse(localStorage.getItem("kb_history")||"[]");
+ if(data[0]?.url!==url){
+  data.unshift({
+   url,platform,
+   time:new Date().toLocaleString("vi-VN")
+  });
+ }
+ localStorage.setItem("kb_history",JSON.stringify(data.slice(0,15)));
+ renderHistory();
+}
+
+function renderHistory(){
+ const data=JSON.parse(localStorage.getItem("kb_history")||"[]");
+ const box=$("history");
+ box.innerHTML="";
+
+ if(!data.length){
+  box.textContent="Chưa có lịch sử.";
+  return;
+ }
+
+ data.forEach(item=>{
+  const div=document.createElement("div");
+  div.className="history-item";
+
+  const info=document.createElement("div");
+  info.textContent=item.platform+" • "+item.time;
+
+  const link=document.createElement("div");
+  link.textContent=item.url;
+
+  const btn=document.createElement("button");
+  btn.className="secondary";
+  btn.textContent="SỬ DỤNG LINK";
+  btn.onclick=()=>{
+   $("url").value=item.url;
+   analyze();
+   window.scrollTo({top:0,behavior:"smooth"});
+  };
+
+  div.append(info,link,btn);
+  box.appendChild(div);
+ });
+}
+
+function clearHistory(){
+ if(confirm("Bạn có chắc chắn muốn xóa lịch sử?")){
+  localStorage.removeItem("kb_history");
+  renderHistory();
+ }
+}
+
+$("url").addEventListener("keydown",e=>{
+ if(e.key==="Enter"){
+  e.preventDefault();
+  analyze();
+ }
+});
+
+renderHistory();
+</script>
+</body>
+</html>
